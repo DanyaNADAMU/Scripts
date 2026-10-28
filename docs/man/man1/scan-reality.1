@@ -1,0 +1,95 @@
+.TH SCAN-REALITY 1 "October 2026" "scripts" "User Commands"
+.SH NAME
+scan-reality \- high-performance asynchronous TLS 1.3 & HTTP/2 camouflage scanner for XTLS Reality
+.SH SYNOPSIS
+.B scan-reality
+[\fB\-w\fR \fIPATH_OR_URL\fR]
+[\fB\-o\fR \fIPATH\fR]
+[\fB\-f\fR \fBcsv\fR|\fBjson\fR|\fBtxt\fR]
+[\fB\-c\fR \fIN\fR]
+[\fB\-t\fR \fISEC\fR]
+[\fB\-\-no-h2\fR]
+[\fB\-\-allow-redirects\fR]
+[\fB\-\-allow-status\fR \fICODES\fR]
+[\fB\-\-allow-untrusted-cert\fR]
+[\fB\-\-top\fR \fIN\fR]
+[\fB\-q\fR|\fB\-\-quiet\fR]
+[\fB\-\-verbose\fR]
+[\fB\-v\fR|\fB\-\-version\fR]
+[\fB\-h\fR|\fB\-\-help\fR]
+.SH DESCRIPTION
+\fBscan-reality\fR is an asynchronous reconnaissance and validation utility engineered to identify and rank high-speed, legitimate camouflage domains for \fBXTLS Reality\fR (VLESS Reality).
+.PP
+Unlike naive ICMP ping utilities (which fail against bank and government servers that drop ICMP echo requests) or opaque compiled binaries, \fBscan-reality\fR performs direct multi-stage network diagnostics:
+.IP 1. 4
+\fBDNS Resolution:\fR Resolves domain hostnames to IPv4 endpoints.
+.IP 2. 4
+\fBTCP Handshake (RTT):\fR Connects to port 443 and measures raw TCP round-trip latency.
+.IP 3. 4
+\fBTLS 1.3 Handshake:\fR Enforces TLSv1.3 negotiation, verifies ALPN (\fBh2\fR), inspects the X.509 certificate trust chain, validates Subject Alternative Names (SAN), and measures TLS handshake latency.
+.IP 4. 4
+\fBHTTP/2 Probing:\fR Dispatches an HTTP GET request to verify server status (defaulting to 200 OK) and detects external 3xx redirects to eliminate DPI camouflage anomalies.
+.PP
+Survivors are sorted ascending by total connection latency (\fBTCP RTT + TLS Handshake + HTTP TTFB\fR) and exported to CSV, JSON, or plain text lists.
+.SH OPTIONS
+.TP
+.BI \-w " PATH_OR_URL" "\fR, \fB\-\-whitelist" " PATH_OR_URL"
+Path to a local domain list, an HTTP(S) URL to fetch remotely, or \fB\-\fR to read from standard input. If omitted, the utility uses an embedded curated whitelist of stable Russian domestic services (VK, Mail.ru, Yandex, 2GIS, Ozon, etc.).
+.TP
+.BI \-o " PATH" "\fR, \fB\-\-output" " PATH"
+Destination file path. Defaults to \fBreality_targets_YYYY-MM-DD.csv\fR in the current working directory.
+.TP
+.BI \-f " FORMAT" "\fR, \fB\-\-format" " FORMAT"
+Output serialization format: \fBcsv\fR (default), \fBjson\fR, or \fBtxt\fR (one domain per line).
+.TP
+.BI \-c " N" "\fR, \fB\-\-concurrency" " N"
+Number of concurrent asynchronous scan workers. Defaults to \fB40\fR.
+.TP
+.BI \-t " SEC" "\fR, \fB\-\-timeout" " SEC"
+Network timeout in seconds per host connection and handshake attempt. Defaults to \fB4.0\fR seconds.
+.TP
+.B \-\-no-h2
+Do not strictly require ALPN \fBh2\fR (allows HTTP/1.1 fallback).
+.TP
+.B \-\-allow-redirects
+Permit HTTP 301, 302, 307, or 308 redirects. By default, any redirect is rejected.
+.TP
+.BI \-\-allow-status " CODES"
+Comma-separated list of acceptable HTTP response status codes. Defaults to \fB200\fR.
+.TP
+.B \-\-allow-untrusted-cert
+Bypass strict X.509 certificate trust chain validation. Useful when scanning environments containing custom internal roots or Russian Trusted Root CAs (Минцифры).
+.TP
+.BI \-\-top " N"
+Number of top fastest candidates to preview in the terminal summary. Defaults to \fB5\fR (set to \fB0\fR to disable preview).
+.TP
+.BR \-q ", " \-\-quiet
+Quiet mode. Suppresses the real-time interactive terminal progress bar.
+.TP
+.B \-\-verbose
+Prints failure diagnostics for rejected domains to stderr.
+.TP
+.BR \-v ", " \-\-version
+Print version number and exit.
+.TP
+.BR \-h ", " \-\-help
+Print usage summary and exit.
+.SH EXAMPLES
+.TP
+.B 1. Scan default curated domestic whitelist:
+scan-reality
+.TP
+.B 2. Scan custom domain list and output JSON:
+scan-reality -w /path/to/whitelist.txt -o reality.json -f json
+.TP
+.B 3. High-concurrency scan with top 10 preview:
+scan-reality -w whitelist.txt -c 100 -t 3.0 --top 10
+.TP
+.B 4. Pipeline execution via standard input:
+cat candidate_domains.txt | scan-reality -w - -o fastest.csv
+.TP
+.B 5. Scan remote whitelist URL directly:
+scan-reality -w https://raw.githubusercontent.com/user/repo/main/whitelist.txt
+.SH SEE ALSO
+.BR xray (1),
+.BR sing-box (1)

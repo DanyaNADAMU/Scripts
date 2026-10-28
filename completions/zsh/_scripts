@@ -34,7 +34,7 @@ _scripts() {
                 autoupdate)
                     _arguments \
                         '1:action:(status enable disable)' \
-                        '2:target:(systemd shell cron apt git all)' \
+                        '2:target:(systemd shell cron apt pacman git all)' \
                         '--scope[Target scope]:scope:(user system)'
                     ;;
                 prune|clean)
@@ -48,7 +48,7 @@ _scripts() {
                         '--scope[Target directory scope]:scope:(user system)' \
                         '(-y --yes)'{-y,--yes}'[Skip confirmation prompt]' \
                         '(-h --help)'{-h,--help}'[Display help message]' \
-                        '*:utility:(media backup-seafile backup-seadrive keylight setup-user)'
+                        '*:utility:(media backup-seafile backup-seadrive keylight languagetool-portal setup-user)'
                     ;;
                 list)
                     _arguments \

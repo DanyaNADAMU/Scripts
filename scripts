@@ -230,6 +230,7 @@ set_scope_paths() {
         MAN_DIR="/usr/local/share/man/man1"
         BASH_COMP_DIR="/usr/share/bash-completion/completions"
         ZSH_COMP_DIR="/usr/local/share/zsh/site-functions"
+        FISH_COMP_DIR="/usr/share/fish/vendor_completions.d"
         STATE_DIR="/var/lib/scripts"
         NEED_SUDO=true
     else
@@ -241,6 +242,7 @@ set_scope_paths() {
         MAN_DIR="${target_home}/.local/share/man/man1"
         BASH_COMP_DIR="${target_home}/.local/share/bash-completion/completions"
         ZSH_COMP_DIR="${target_home}/.local/share/zsh/site-functions"
+        FISH_COMP_DIR="${target_home}/.config/fish/completions"
         STATE_DIR="${target_home}/.local/state/scripts"
         NEED_SUDO=false
     fi
@@ -430,6 +432,7 @@ install_man_and_completions() {
     install_asset "docs/man/man1/${name}.1" "$MAN_DIR/${name}.1" "644"
     install_asset "completions/bash/${name}" "$BASH_COMP_DIR/${name}" "644"
     install_asset "completions/zsh/_${name}" "$ZSH_COMP_DIR/_${name}" "644"
+    install_asset "completions/fish/${name}.fish" "$FISH_COMP_DIR/${name}.fish" "644"
 }
 
 uninstall_man_and_completions() {
@@ -438,13 +441,14 @@ uninstall_man_and_completions() {
     if [ "$NEED_SUDO" = true ] && [ "$EUID" -ne 0 ]; then
         cmd_prefix="sudo"
     fi
-    $cmd_prefix rm -f "$MAN_DIR/${name}.1" "$BASH_COMP_DIR/${name}" "$ZSH_COMP_DIR/_${name}"
+    $cmd_prefix rm -f "$MAN_DIR/${name}.1" "$BASH_COMP_DIR/${name}" "$ZSH_COMP_DIR/_${name}" "$FISH_COMP_DIR/${name}.fish"
     # Additional cleanup in common system paths to ensure zero remnants
     if [ "$NEED_SUDO" = true ] || [ "$EUID" -eq 0 ]; then
         $cmd_prefix rm -f "/usr/share/man/man1/${name}.1" "/usr/local/share/man/man1/${name}.1" \
                           "/usr/local/share/bash-completion/completions/${name}" "/usr/share/bash-completion/completions/${name}" \
                           "/etc/bash_completion.d/${name}" \
-                          "/usr/local/share/zsh/site-functions/_${name}" "/usr/share/zsh/site-functions/_${name}" 2>/dev/null || true
+                          "/usr/local/share/zsh/site-functions/_${name}" "/usr/share/zsh/site-functions/_${name}" \
+                          "/usr/share/fish/vendor_completions.d/${name}.fish" "/usr/local/share/fish/vendor_completions.d/${name}.fish" 2>/dev/null || true
     fi
 }
 
@@ -500,7 +504,55 @@ uninstall_apt_hook() {
     fi
 }
 
-# --- 2. Systemd Hook ---
+# --- 2. Pacman Hook ---
+install_pacman_hook() {
+    local target_dir="/etc/pacman.d/hooks"
+    local target="$target_dir/99scripts.hook"
+    local cmd_prefix=""
+    if [ "$EUID" -ne 0 ]; then
+        cmd_prefix="sudo"
+    fi
+    $cmd_prefix mkdir -p "$target_dir"
+    if [ -n "$SOURCE_DIR" ] && [ -f "$SOURCE_DIR/hooks/pacman/99scripts.hook" ]; then
+        $cmd_prefix cp -f "$SOURCE_DIR/hooks/pacman/99scripts.hook" "$target"
+    else
+        local tmp_hook
+        tmp_hook="$(mktemp -t scripts-pacman.XXXXXX)"
+        register_tmp "$tmp_hook"
+        local base_raw
+        base_raw="$(get_github_raw_url)"
+        if curl -fsSL --connect-timeout 4 --max-time 15 "$base_raw/hooks/pacman/99scripts.hook" -o "$tmp_hook" 2>/dev/null && [ -s "$tmp_hook" ]; then
+            $cmd_prefix cp -f "$tmp_hook" "$target"
+        else
+            $cmd_prefix tee "$target" >/dev/null << 'EOF'
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Checking updates for nada.mu scripts ecosystem...
+When = PostTransaction
+Exec = /usr/bin/bash -c "if [ -x /usr/local/bin/scripts ]; then ( /usr/local/bin/scripts autoupdate pacman >/dev/null 2>&1 & ); elif [ -x /usr/bin/scripts ]; then ( /usr/bin/scripts autoupdate pacman >/dev/null 2>&1 & ); fi"
+EOF
+        fi
+        rm -f "$tmp_hook"
+    fi
+    $cmd_prefix chmod 644 "$target" 2>/dev/null || true
+}
+
+uninstall_pacman_hook() {
+    local target="/etc/pacman.d/hooks/99scripts.hook"
+    if [ -f "$target" ]; then
+        local cmd_prefix=""
+        if [ "$EUID" -ne 0 ]; then
+            cmd_prefix="sudo"
+        fi
+        $cmd_prefix rm -f "$target"
+    fi
+}
+
+# --- 3. Systemd Hook ---
 install_systemd_hook() {
     local scope="${1:-user}"
     local target_home
@@ -674,13 +726,47 @@ EOF
         fi
         log_ok "Shell auto-update snippet installed into $f"
     done
+
+    # Fish shell support
+    if [ -f "$target_home/.config/fish/config.fish" ] || command -v fish >/dev/null 2>&1; then
+        local fish_cfg="$target_home/.config/fish/config.fish"
+        mkdir -p "$(dirname "$fish_cfg")"
+        touch "$fish_cfg"
+        local fish_snippet
+        fish_snippet="$(cat << 'EOF'
+# >>> nada.mu scripts autoupdate >>>
+if status is-interactive; and test -x "$HOME/.local/bin/scripts"
+    set -l _scripts_last "$HOME/.local/state/scripts/last_shell_update"
+    set -l _scripts_now (date +%s 2>/dev/null; or echo 0)
+    set -l _scripts_prev 0
+    if test -f "$_scripts_last"
+        set _scripts_prev (stat -c %Y "$_scripts_last" 2>/dev/null; or echo 0)
+    end
+    if test (math "$_scripts_now - $_scripts_prev") -ge 86400
+        mkdir -p "$HOME/.local/state/scripts" 2>/dev/null
+        touch "$_scripts_last" 2>/dev/null
+        "$HOME/.local/bin/scripts" update -y >/dev/null 2>&1 &
+    end
+end
+# <<< nada.mu scripts autoupdate <<<
+EOF
+)"
+        if grep -qF "$SHELL_HOOK_START" "$fish_cfg" 2>/dev/null; then
+            sed -i "/$SHELL_HOOK_START/,/$SHELL_HOOK_END/d" "$fish_cfg"
+        fi
+        printf "\n%s\n" "$fish_snippet" >> "$fish_cfg"
+        if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+            chown "$SUDO_USER:" "$fish_cfg" 2>/dev/null || true
+        fi
+        log_ok "Shell auto-update snippet installed into $fish_cfg"
+    fi
 }
 
 uninstall_shell_hook() {
     local target_home
     target_home="$(get_target_home)"
 
-    local target_files=("$target_home/.zshrc" "$target_home/.bashrc")
+    local target_files=("$target_home/.zshrc" "$target_home/.bashrc" "$target_home/.config/fish/config.fish")
     local removed=false
     for f in "${target_files[@]}"; do
         if [ -f "$f" ] && grep -qF "$SHELL_HOOK_START" "$f" 2>/dev/null; then
@@ -690,7 +776,7 @@ uninstall_shell_hook() {
         fi
     done
     if [ "$removed" = false ]; then
-        log_info "No shell auto-update snippet found in ~/.bashrc or ~/.zshrc."
+        log_info "No shell auto-update snippet found in ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish."
     fi
 }
 
@@ -951,6 +1037,7 @@ cmd_sync() {
     ensure_write_access "$MAN_DIR"
     ensure_write_access "$BASH_COMP_DIR"
     ensure_write_access "$ZSH_COMP_DIR"
+    ensure_write_access "$FISH_COMP_DIR"
     ensure_write_access "$STATE_DIR"
 
     local current_manifest
@@ -1144,6 +1231,11 @@ cmd_sync() {
         install_apt_hook
     fi
 
+    # Install Pacman hook if system scope and pacman is present
+    if [ "$scope" = "system" ] && ([ -d "/etc/pacman.d" ] || command -v pacman >/dev/null 2>&1); then
+        install_pacman_hook
+    fi
+
     # Configure git hooks in local repository clones
     if [ "$IS_LOCAL_REPO" = true ]; then
         git -C "$REPO_DIR" config core.hooksPath .githooks 2>/dev/null || true
@@ -1164,6 +1256,9 @@ cmd_sync() {
 
     if [ "$scope" = "system" ] && [ -f "/etc/apt/apt.conf.d/99scripts" ]; then
         log_ok "APT hook: Auto-update enabled (/etc/apt/apt.conf.d/99scripts)."
+    fi
+    if [ "$scope" = "system" ] && [ -f "/etc/pacman.d/hooks/99scripts.hook" ]; then
+        log_ok "Pacman hook: Auto-update enabled (/etc/pacman.d/hooks/99scripts.hook)."
     fi
 
     if [ "$scope" = "user" ]; then
@@ -1487,9 +1582,10 @@ cmd_uninstall() {
             $cmd_prefix rm -f "/usr/bin/scripts"
         fi
         uninstall_apt_hook
+        uninstall_pacman_hook
         uninstall_systemd_hook "system"
         uninstall_cron_hook "system"
-        log_ok "Removed system auto-update hooks (APT, Systemd, Cron)"
+        log_ok "Removed system auto-update hooks (APT, Pacman, Systemd, Cron)"
     else
         uninstall_systemd_hook "user"
         uninstall_shell_hook
@@ -1508,11 +1604,12 @@ cmd_autoupdate() {
     [ $# -gt 0 ] && shift || true
 
     case "$subcmd" in
-        apt)
-            # Internal hook invoked by APT Post-Invoke (silent background execution)
-            local stamp_file="/var/lib/scripts/last_apt_update"
+        apt|pacman)
+            # Internal hook invoked by APT Post-Invoke or Pacman PostTransaction (silent background execution)
+            local mgr="$subcmd"
+            local stamp_file="/var/lib/scripts/last_${mgr}_update"
             local log_file="/var/log/scripts-autoupdate.log"
-            local lock_file="/run/lock/scripts-apt.lock"
+            local lock_file="/run/lock/scripts-${mgr}.lock"
             local now
             now="$(date +%s)"
 
@@ -1538,7 +1635,7 @@ cmd_autoupdate() {
 
             mkdir -p "$(dirname "$log_file")" 2>/dev/null || true
             {
-                echo "=== [$(date -u '+%Y-%m-%dT%H:%M:%SZ')] APT Auto-Update Triggered ==="
+                echo "=== [$(date -u '+%Y-%m-%dT%H:%M:%SZ')] ${mgr^^} Auto-Update Triggered ==="
                 cmd_sync --scope system -y
             } >> "$log_file" 2>&1 || true
             exit 0
@@ -1577,10 +1674,11 @@ cmd_autoupdate() {
 
             # 3. Shell Hook
             local sh_stat="Disabled"
-            local sh_detail="No hook found in ~/.bashrc or ~/.zshrc"
+            local sh_detail="No hook found in ~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish"
             local sh_found=()
             [ -f "$target_home/.bashrc" ] && grep -qF "$SHELL_HOOK_START" "$target_home/.bashrc" 2>/dev/null && sh_found+=("~/.bashrc")
             [ -f "$target_home/.zshrc" ] && grep -qF "$SHELL_HOOK_START" "$target_home/.zshrc" 2>/dev/null && sh_found+=("~/.zshrc")
+            [ -f "$target_home/.config/fish/config.fish" ] && grep -qF "$SHELL_HOOK_START" "$target_home/.config/fish/config.fish" 2>/dev/null && sh_found+=("~/.config/fish/config.fish")
             if [ ${#sh_found[@]} -gt 0 ]; then
                 sh_stat="Enabled"
                 sh_detail="Active in $(IFS=, ; echo "${sh_found[*]}") (24h silent background)"
@@ -1629,7 +1727,19 @@ cmd_autoupdate() {
             fi
             printf "  %-12s %-8s %-12s %s\n" "apt" "system" "$apt_stat" "$apt_detail"
 
-            # 7. Git Hook
+            # 7. Pacman Hook
+            local pac_stat="Disabled"
+            local pac_detail="/etc/pacman.d/hooks/99scripts.hook not found"
+            if [ -f "/etc/pacman.d/hooks/99scripts.hook" ]; then
+                pac_stat="Enabled"
+                pac_detail="/etc/pacman.d/hooks/99scripts.hook (non-blocking, 24h)"
+            elif [ ! -d "/etc/pacman.d" ] && ! command -v pacman >/dev/null 2>&1; then
+                pac_stat="N/A"
+                pac_detail="Pacman package manager not detected"
+            fi
+            printf "  %-12s %-8s %-12s %s\n" "pacman" "system" "$pac_stat" "$pac_detail"
+
+            # 8. Git Hook
             local git_stat="N/A"
             local git_detail="Only applicable within a cloned git repository"
             if [ "$IS_LOCAL_REPO" = true ]; then
@@ -1645,8 +1755,8 @@ cmd_autoupdate() {
 
             echo ""
             echo "Commands:"
-            echo "  scripts autoupdate enable [systemd|shell|cron|apt|git|all] [--scope user|system]"
-            echo "  scripts autoupdate disable [systemd|shell|cron|apt|git|all] [--scope user|system]"
+            echo "  scripts autoupdate enable [systemd|shell|cron|apt|pacman|git|all] [--scope user|system]"
+            echo "  scripts autoupdate disable [systemd|shell|cron|apt|pacman|git|all] [--scope user|system]"
             ;;
         enable)
             local target=""
@@ -1657,7 +1767,7 @@ cmd_autoupdate() {
                         explicit_scope="$2"
                         shift 2
                         ;;
-                    systemd|shell|cron|apt|git|all)
+                    systemd|shell|cron|apt|pacman|git|all)
                         target="$1"
                         shift
                         ;;
@@ -1702,6 +1812,18 @@ cmd_autoupdate() {
                     install_apt_hook
                     log_ok "APT auto-update hook enabled at /etc/apt/apt.conf.d/99scripts."
                     ;;
+                pacman)
+                    if [ ! -d "/etc/pacman.d" ] && ! command -v pacman >/dev/null 2>&1; then
+                        log_err "Pacman package manager not detected on this system."
+                        exit 1
+                    fi
+                    if [ "$EUID" -ne 0 ]; then
+                        log_info "Enabling Pacman hook requires root privileges."
+                        sudo -v || { log_err "Sudo authorization failed."; exit 1; }
+                    fi
+                    install_pacman_hook
+                    log_ok "Pacman auto-update hook enabled at /etc/pacman.d/hooks/99scripts.hook."
+                    ;;
                 git)
                     install_git_hook
                     ;;
@@ -1711,6 +1833,9 @@ cmd_autoupdate() {
                         install_cron_hook "system" || true
                         if [ -d "/etc/apt/apt.conf.d" ]; then
                             install_apt_hook || true
+                        fi
+                        if [ -d "/etc/pacman.d" ] || command -v pacman >/dev/null 2>&1; then
+                            install_pacman_hook || true
                         fi
                     else
                         install_systemd_hook "user" || true
@@ -1723,7 +1848,7 @@ cmd_autoupdate() {
                     log_ok "All appropriate autoupdate mechanisms enabled for scope '$scope'."
                     ;;
                 *)
-                    log_err "Unknown target for enable: '$target' (available: systemd, shell, cron, apt, git, all)"
+                    log_err "Unknown target for enable: '$target' (available: systemd, shell, cron, apt, pacman, git, all)"
                     exit 1
                     ;;
             esac
@@ -1737,7 +1862,7 @@ cmd_autoupdate() {
                         explicit_scope="$2"
                         shift 2
                         ;;
-                    systemd|shell|cron|apt|git|all)
+                    systemd|shell|cron|apt|pacman|git|all)
                         target="$1"
                         shift
                         ;;
@@ -1782,6 +1907,18 @@ cmd_autoupdate() {
                         log_info "APT auto-update hook is already disabled."
                     fi
                     ;;
+                pacman)
+                    if [ -f "/etc/pacman.d/hooks/99scripts.hook" ]; then
+                        if [ "$EUID" -ne 0 ]; then
+                            log_info "Disabling Pacman hook requires root privileges."
+                            sudo -v || { log_err "Sudo authorization failed."; exit 1; }
+                        fi
+                        uninstall_pacman_hook
+                        log_ok "Pacman auto-update hook disabled (/etc/pacman.d/hooks/99scripts.hook removed)."
+                    else
+                        log_info "Pacman auto-update hook is already disabled."
+                    fi
+                    ;;
                 git)
                     uninstall_git_hook
                     ;;
@@ -1790,6 +1927,7 @@ cmd_autoupdate() {
                         uninstall_systemd_hook "system" || true
                         uninstall_cron_hook "system" || true
                         uninstall_apt_hook || true
+                        uninstall_pacman_hook || true
                     else
                         uninstall_systemd_hook "user" || true
                         uninstall_shell_hook || true
@@ -1801,21 +1939,22 @@ cmd_autoupdate() {
                     log_ok "All autoupdate mechanisms disabled for scope '$scope'."
                     ;;
                 *)
-                    log_err "Unknown target for disable: '$target' (available: systemd, shell, cron, apt, git, all)"
+                    log_err "Unknown target for disable: '$target' (available: systemd, shell, cron, apt, pacman, git, all)"
                     exit 1
                     ;;
             esac
             ;;
         -h|--help|help)
-            echo "Usage: scripts autoupdate [status|enable|disable] [systemd|shell|cron|apt|git|all] [--scope user|system]"
+            echo "Usage: scripts autoupdate [status|enable|disable] [systemd|shell|cron|apt|pacman|git|all] [--scope user|system]"
             echo ""
             echo "Manage automated update mechanisms across the ecosystem."
             echo ""
             echo "Targets:"
             echo "  systemd      Systemd update timer (user or system scope)"
-            echo "  shell        Interactive shell startup hook (24h silent background in ~/.bashrc, ~/.zshrc)"
+            echo "  shell        Interactive shell startup hook (24h silent background in ~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish)"
             echo "  cron         Daily cron job (user crontab or /etc/cron.daily)"
             echo "  apt          APT package manager hook (/etc/apt/apt.conf.d/99scripts)"
+            echo "  pacman       Pacman / ALPM package manager hook (/etc/pacman.d/hooks/99scripts.hook)"
             echo "  git          Git post-merge hook for local repository clones"
             echo "  all          Enable or disable all mechanisms for the specified scope"
             echo ""

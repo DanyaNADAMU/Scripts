@@ -2,15 +2,19 @@
 # ==============================================================================
 # Script:      setup_user.sh
 # Category:    server
-# Description: Provisions a new Linux user with Zsh, SSH keys, and rootless Podman.
+# Status:      DEPRECATED / ABANDONED
+# Description: [DEPRECATED / ABANDONED] Provisions a new Linux user with Zsh, SSH keys, and rootless Podman.
 # Target:      Linux servers (Debian/Ubuntu/Arch/Alpine) with systemd
 # Usage:       sudo ./setup_user.sh [--help]
 # ==============================================================================
 
+echo -e "\033[1;33m[!] WARNING: 'setup-user' (setup_user.sh) is deprecated and abandoned.\033[0m" >&2
+echo -e "\033[1;33m    Use dedicated configuration management (e.g. Ansible / infra) instead.\033[0m\n" >&2
+
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: sudo $0"
     echo ""
-    echo "Interactive script to provision a server user account:"
+    echo "[DEPRECATED] Interactive script to provision a server user account:"
     echo "  - Creates user with /bin/zsh"
     echo "  - Configures SSH public key in ~/.ssh/authorized_keys"
     echo "  - Sets up rootless Podman with lingering and user socket"

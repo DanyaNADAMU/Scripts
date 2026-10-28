@@ -16,7 +16,7 @@ _scripts_completions() {
             return 0
             ;;
         enable|disable)
-            COMPREPLY=( $(compgen -W "systemd shell cron apt git all --scope" -- "$cur") )
+            COMPREPLY=( $(compgen -W "systemd shell cron apt pacman git all --scope" -- "$cur") )
             return 0
             ;;
         --scope)
@@ -32,7 +32,7 @@ _scripts_completions() {
             return 0
             ;;
         uninstall)
-            COMPREPLY=( $(compgen -W "media backup-seafile backup-seadrive keylight setup-user --scope --yes --help" -- "$cur") )
+            COMPREPLY=( $(compgen -W "media backup-seafile backup-seadrive keylight languagetool-portal setup-user --scope --yes --help" -- "$cur") )
             return 0
             ;;
         prune|clean)

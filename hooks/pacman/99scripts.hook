@@ -1,0 +1,14 @@
+# =============================================================================
+# ALPM / Pacman Hook: 99scripts.hook
+# Description: Background update hook for nada.mu personal utilities.
+# Triggers on: 'pacman -Syu' (rate-limited to 24h, non-blocking & silent).
+# =============================================================================
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Checking updates for nada.mu scripts ecosystem...
+When = PostTransaction
+Exec = /usr/bin/bash -c "if [ -x /usr/local/bin/scripts ]; then ( /usr/local/bin/scripts autoupdate pacman >/dev/null 2>&1 & ); elif [ -x /usr/bin/scripts ]; then ( /usr/bin/scripts autoupdate pacman >/dev/null 2>&1 & ); fi"

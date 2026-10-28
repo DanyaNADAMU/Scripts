@@ -1,0 +1,21 @@
+#compdef scan-reality
+
+_scan_reality() {
+    _arguments \
+        '(-w --whitelist)'{-w,--whitelist}'[Path to domain list, URL, or - for stdin]:whitelist:_files' \
+        '(-o --output)'{-o,--output}'[Destination file path]:output:_files' \
+        '(-f --format)'{-f,--format}'[Output serialization format]:format:(csv json txt)' \
+        '(-c --concurrency)'{-c,--concurrency}'[Number of concurrent async workers]:workers:' \
+        '(-t --timeout)'{-t,--timeout}'[Connection and handshake timeout in seconds]:timeout:' \
+        '--no-h2[Allow HTTP/1.1 without requiring ALPN h2]' \
+        '--allow-redirects[Allow HTTP 3xx redirects]' \
+        '--allow-status[Comma-separated list of allowed HTTP status codes]:codes:' \
+        '--allow-untrusted-cert[Allow untrusted or Russian CA root certificates]' \
+        '--top[Number of top fastest candidates to preview]:count:' \
+        '(-q --quiet)'{-q,--quiet}'[Suppress real-time console progress]' \
+        '--verbose[Print failure diagnostics to stderr]' \
+        '(-v --version)'{-v,--version}'[Show version number and exit]' \
+        '(-h --help)'{-h,--help}'[Show usage summary and exit]'
+}
+
+_scan_reality "$@"

@@ -1,0 +1,31 @@
+# Bash completion for scan-reality
+_scan_reality_completions() {
+    local cur prev words cword
+    _init_completion -s || return
+
+    local options="-w --whitelist -o --output -f --format -c --concurrency -t --timeout --no-h2 --allow-redirects --allow-status --allow-untrusted-cert --top -q --quiet --verbose -v --version -h --help"
+
+    case "$prev" in
+        -w|--whitelist)
+            _filedir
+            return 0
+            ;;
+        -o|--output)
+            _filedir
+            return 0
+            ;;
+        -f|--format)
+            COMPREPLY=( $(compgen -W "csv json txt" -- "$cur") )
+            return 0
+            ;;
+        -c|--concurrency|-t|--timeout|--top|--allow-status)
+            return 0
+            ;;
+    esac
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "$options" -- "$cur") )
+        return 0
+    fi
+}
+complete -F _scan_reality_completions scan-reality

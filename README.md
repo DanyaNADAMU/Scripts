@@ -86,6 +86,19 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ---
 
+### Option 3: Arch Linux & CachyOS Native Package (`makepkg -si`)
+For Arch Linux, CachyOS, and other ALPM-based systems, install natively via `makepkg` so files and dependencies (`uv`, `bash`, `systemd`) are tracked by `pacman`:
+
+```bash
+git clone https://github.com/DanyaNADAMU/scripts.git ~/projects/scripts
+cd ~/projects/scripts
+makepkg -si
+```
+
+This builds and installs `scripts-git`, placing binaries in `/usr/bin`, registering man pages and shell completions (Bash, Zsh, Fish), and configuring the ALPM post-transaction update hook.
+
+---
+
 ## Management via the `scripts` Command
 
 Once installed, the `scripts` manager is available anywhere in your terminal:
@@ -94,7 +107,7 @@ Once installed, the `scripts` manager is available anywhere in your terminal:
 scripts update               # Pull upstream updates and sync all utilities (default: all)
 scripts list                 # View all declared utilities and installation status
 scripts autoupdate status    # Check status of automated update mechanisms across the system
-scripts autoupdate enable    # Enable auto-update (systemd, shell, cron, apt, git, all)
+scripts autoupdate enable    # Enable auto-update (systemd, shell, cron, apt, pacman, git, all)
 scripts uninstall            # Cleanly remove all utilities, man pages, and completions
 scripts --help               # View command options and help
 ```
@@ -104,9 +117,10 @@ scripts --help               # View command options and help
 * **Scope Protection:** If you run `scripts update` and an existing installation is detected with mismatched privileges, `scripts` safely prompts you to choose the desired action rather than creating accidental duplicates.
 * **Automated Updates (Zero-Friction):** Stay effortlessly up to date across multiple environments:
   * **Systemd Timers:** Daily scheduled updates with `Persistent=true` and randomized delay (`scripts autoupdate enable systemd`). Works in user space without root!
-  * **Interactive Shell Hook:** Silent background synchronization on terminal startup with 24-hour rate limit (`scripts autoupdate enable shell`).
+  * **Interactive Shell Hook:** Silent background synchronization on terminal startup with 24-hour rate limit (`scripts autoupdate enable shell`). Supports Bash, Zsh, and Fish!
   * **Cron Jobs:** Scheduled daily update via user crontab or `/etc/cron.daily` (`scripts autoupdate enable cron`).
-  * **APT Hook:** Silent, non-blocking background hook in `/etc/apt/apt.conf.d/99scripts` for Debian/Ubuntu servers (24h cooldown, detached execution).
+  * **APT Hook:** Silent, non-blocking background hook in `/etc/apt/apt.conf.d/99scripts` for Debian/Ubuntu systems (24h cooldown, detached execution).
+  * **Pacman Hook:** Silent, non-blocking ALPM background hook in `/etc/pacman.d/hooks/99scripts.hook` for Arch Linux & CachyOS (24h cooldown, detached execution).
   * **Git Post-Merge Hook:** Automatically re-syncs utilities upon `git pull` in cloned repositories.
 
 ---
@@ -131,6 +145,7 @@ Tab completion for command names works out-of-the-box in all shells (`sh`, `bash
 Rich argument and flag completions (`setup-user --<Tab>`, `scripts <Tab>`) are installed automatically for:
 * **Bash:** Installed to `~/.local/share/bash-completion/completions/` (or `/usr/share/bash-completion/completions/`)
 * **Zsh:** Installed to `~/.local/share/zsh/site-functions/` (or `/usr/local/share/zsh/site-functions/`)
+* **Fish:** Installed to `~/.config/fish/completions/` (or `/usr/share/fish/vendor_completions.d/`)
 
 ---
 
@@ -139,10 +154,11 @@ Rich argument and flag completions (`setup-user --<Tab>`, `scripts <Tab>`) are i
 | Command | Source Path | Category | Description | Runtime / Dependencies |
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts` | `scripts` | **Manager** | CLI package manager for the scripts ecosystem. | Bash |
-| `setup-user` | `server/setup_user.sh` | **Server** | Provisions a new Linux user with Zsh, SSH keys, lingering, and rootless Podman. | Bash, `systemd`, `podman` |
+| `setup-user` | `server/setup_user.sh` | **Server** | *(Deprecated)* Provisions a new Linux user with Zsh, SSH keys, lingering, and rootless Podman. | Bash, `systemd`, `podman` |
 | `backup-seafile` | `server/backup_seafile.sh` | **Server** | Automated encrypted incremental backup from Seafile (WebDAV/FUSE) to Google Drive. | Bash, `rclone`, `systemd` |
 | `backup-seadrive` | `desktop/backup_seadrive.sh` | **Desktop** | Automated encrypted incremental backup from SeaDrive to Google Drive via Rclone. | Bash, `rclone`, `systemd` |
 | `keylight` | `desktop/keylight.py` | **Desktop** | Ultra-low latency keyboard RGB profile switcher via OpenRGB SDK socket. | Python $\ge$ 3.10, `uv`, OpenRGB |
 | `languagetool-portal` | `server/languagetool_portal.py` | **Server** | Self-service token portal for LanguageTool with Authentik forward auth. | Python $\ge$ 3.10 (standard library only) |
 | `media` | `media/media.py` | **Media** | Unified media lifecycle: C2PA attestation, DWT steganography, Bitcoin timestamps & asset packaging. | Python $\ge$ 3.11, `uv` |
+| `scan-reality` | `server/scan_reality.py` | **Server** | High-performance async TLS 1.3 & HTTP/2 camouflage scanner for XTLS Reality. | Python $\ge$ 3.11, `uv` |
 

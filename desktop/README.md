@@ -53,10 +53,13 @@ keylight --list
 ```
 
 #### Window Manager Keybinding Example (Niri / Sway / Hyprland)
-Bind a keyboard shortcut (e.g., `Fn + F8` or `Mod + Shift + B`) to `keylight` in your compositor configuration:
+Bind keyboard shortcuts (e.g. `Fn + F8`, hardware brightness keys, or `Mod + Shift + B`) to `keylight` in your compositor configuration:
 ```kdl
 // Niri example (~/.config/niri/config.kdl)
 binds {
-    Mod+Shift+B { spawn "keylight"; }
+    // Cycle presets via dedicated media keys or custom shortcut
+    XF86KbdBrightnessUp   allow-when-locked=true { spawn "keylight" "--next"; }
+    XF86KbdBrightnessDown allow-when-locked=true { spawn "keylight" "off"; }
+    Mod+Shift+B                                  { spawn "keylight"; }
 }
 ```

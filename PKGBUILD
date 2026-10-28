@@ -1,0 +1,73 @@
+# Maintainer: DanyaNADAMU <git@nada.mu>
+# Contributor: DanyaNADAMU <git@nada.mu>
+
+pkgname=scripts-git
+pkgver=1.1.0.r13.gaeab73d
+pkgrel=1
+pkgdesc="Unified manager and personal utilities ecosystem for nada.mu"
+arch=('any')
+url="https://github.com/DanyaNADAMU/scripts"
+license=('MIT')
+depends=('bash' 'systemd' 'uv')
+optdepends=(
+    'rclone: for automated cloud backup utilities (backup-seadrive, backup-seafile)'
+    'openrgb: for keyboard RGB backlight profile switching (keylight)'
+    'libnotify: for desktop notifications'
+)
+makedepends=('git')
+provides=('scripts')
+conflicts=('scripts')
+source=("scripts::git+https://github.com/DanyaNADAMU/scripts.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    local target_dir="$srcdir/scripts"
+    [ ! -d "$target_dir" ] && target_dir="${startdir:-.}"
+    cd "$target_dir"
+    git describe --long --tags 2>/dev/null || printf "1.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+    local base_dir="$srcdir/scripts"
+    [ ! -d "$base_dir" ] && base_dir="${startdir:-.}"
+    cd "$base_dir"
+
+    # 1. Install CLI utilities declared in manifest.txt into /usr/bin
+    install -dm755 "$pkgdir/usr/bin"
+    while IFS=: read -r src cmd cat desc; do
+        [[ -z "$src" || "$src" =~ ^[[:space:]]*# ]] && continue
+        if [ -f "$src" ]; then
+            install -Dm755 "$src" "$pkgdir/usr/bin/$cmd"
+        fi
+    done < manifest.txt
+
+    # Install unified scripts manager
+    install -Dm755 scripts "$pkgdir/usr/bin/scripts"
+
+    # 2. Install Linux manual pages
+    install -dm755 "$pkgdir/usr/share/man/man1"
+    for manfile in docs/man/man1/*.1; do
+        if [ -f "$manfile" ]; then
+            install -Dm644 "$manfile" "$pkgdir/usr/share/man/man1/"
+        fi
+    done
+
+    # 3. Install shell completions (Bash, Zsh, Fish)
+    install -dm755 "$pkgdir/usr/share/bash-completion/completions"
+    install -dm755 "$pkgdir/usr/share/zsh/site-functions"
+    install -dm755 "$pkgdir/usr/share/fish/vendor_completions.d"
+
+    for f in completions/bash/*; do
+        [ -f "$f" ] && install -Dm644 "$f" "$pkgdir/usr/share/bash-completion/completions/"
+    done
+    for f in completions/zsh/*; do
+        [ -f "$f" ] && install -Dm644 "$f" "$pkgdir/usr/share/zsh/site-functions/"
+    done
+    for f in completions/fish/*; do
+        [ -f "$f" ] && install -Dm644 "$f" "$pkgdir/usr/share/fish/vendor_completions.d/"
+    done
+
+    # 4. Install Pacman / ALPM hook
+    install -dm755 "$pkgdir/usr/share/libalpm/hooks"
+    install -Dm644 hooks/pacman/99scripts.hook "$pkgdir/usr/share/libalpm/hooks/99scripts.hook"
+}

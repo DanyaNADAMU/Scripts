@@ -3,9 +3,10 @@
 Scripts designed for Linux server administration, user management, container daemons (Podman/Docker), systemd units, and network services.
 
 ## Contents
-* [`setup_user.sh`](./setup_user.sh) — Provision a new Linux user with Zsh, SSH keys, lingering, and rootless Podman.
+* [`setup_user.sh`](./setup_user.sh) — *(Deprecated / Abandoned)* Provision a new Linux user with Zsh, SSH keys, lingering, and rootless Podman.
 * [`backup_seafile.sh`](./backup_seafile.sh) — Resilient encrypted incremental backup from Seafile (via WebDAV or local mount) to Google Drive via Rclone.
 * [`languagetool_portal.py`](./languagetool_portal.py) — Self-service token portal for LanguageTool integrated with Authentik Forward Auth.
+* [`scan_reality.py`](./scan_reality.py) — High-performance asynchronous TLS 1.3 & HTTP/2 camouflage scanner for XTLS Reality.
 
 ---
 
@@ -200,5 +201,39 @@ backend be_lt_portal
 
 backend be_lt_api
     server lt_app 127.0.0.1:8010 check inter 5s
+```
+
+---
+
+### `scan-reality`
+High-performance asynchronous reconnaissance and validation scanner to detect, benchmark, and rank camouflage targets for **XTLS Reality** (VLESS Reality).
+
+#### Why Not Ping or RealiTLScanner?
+* **Accurate Protocol Metrics:** ICMP echo requests (`ping`) are routinely dropped by banking firewalls (`alfabank.ru`), government networks (`*.gov.ru`), and DDoS protection layers. `scan-reality` measures true **TCP Handshake RTT + TLS 1.3 Handshake RTT + HTTP TTFB** on port 443.
+* **Massive Concurrency:** Probes hundreds of domains in parallel using `asyncio` and HTTP/2 multiplexing, evaluating 100+ candidates in under 5 seconds.
+* **Rigorous Reality Filtration:**
+  * Enforces **TLS 1.3** and negotiated ALPN **`h2`**.
+  * Validates public X.509 certificate trust chains and Subject Alternative Names (SAN).
+  * Automatically rejects 3xx redirects to eliminate DPI active probing anomalies.
+  * Verifies HTTP 200 responses on root (`/`).
+* **Self-Contained Curated Whitelist:** Comes with an embedded curated domestic whitelist of high-bandwidth services (VK, Yandex, 2GIS, Mail.ru, Ozon, etc.), or accepts custom files, URLs, and stdin.
+
+#### Usage
+
+```bash
+# Scan default curated whitelist and export to reality_targets_YYYY-MM-DD.csv
+scan-reality
+
+# Scan custom domain whitelist
+scan-reality -w /path/to/whitelist.txt
+
+# High-concurrency scan with top 10 preview and JSON export
+scan-reality -w whitelist.txt -c 100 -t 3.0 --top 10 -o targets.json -f json
+
+# Pipeline from stdin
+cat domains.txt | scan-reality -w - -o fastest.csv
+
+# Scan remote raw whitelist directly
+scan-reality -w https://example.com/whitelist.txt
 ```
 
