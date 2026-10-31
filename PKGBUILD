@@ -21,18 +21,25 @@ optdepends=(
 makedepends=('git')
 provides=('scripts')
 conflicts=('scripts')
-source=("scripts::git+https://github.com/DanyaNADAMU/Scripts.git")
+source=("$pkgname::git+https://github.com/DanyaNADAMU/Scripts.git")
 sha256sums=('SKIP')
 
 pkgver() {
-    local target_dir="$srcdir/scripts"
+    local target_dir="$srcdir/$pkgname"
+    [ ! -d "$target_dir" ] && target_dir="$srcdir/scripts"
     [ ! -d "$target_dir" ] && target_dir="${startdir:-.}"
     cd "$target_dir"
-    git describe --long --tags --match 'v*' 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' || printf "1.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+    local ver
+    ver="$(git describe --long --tags --match 'v*' 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' || true)"
+    if [ -z "$ver" ]; then
+        ver="$(printf "1.1.0.r%s.g%s" "$(git rev-list --count HEAD 2>/dev/null || echo "0")" "$(git rev-parse --short=7 HEAD 2>/dev/null || echo "0000000")")"
+    fi
+    printf "%s" "$ver"
 }
 
 package() {
-    local base_dir="$srcdir/scripts"
+    local base_dir="$srcdir/$pkgname"
+    [ ! -d "$base_dir" ] && base_dir="$srcdir/scripts"
     [ ! -d "$base_dir" ] && base_dir="${startdir:-.}"
     cd "$base_dir"
 

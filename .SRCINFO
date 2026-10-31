@@ -18,7 +18,7 @@ pkgbase = scripts-git
 	optdepends = sshfs: for sshfs compatibility shim
 	provides = scripts
 	conflicts = scripts
-	source = scripts::git+https://github.com/DanyaNADAMU/Scripts.git
+	source = scripts-git::git+https://github.com/DanyaNADAMU/Scripts.git
 	sha256sums = SKIP
 
 pkgname = scripts-git

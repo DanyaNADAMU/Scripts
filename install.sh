@@ -8,6 +8,14 @@ set -euo pipefail
 
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-}")" 2>/dev/null && pwd || echo "")"
 
+BUILD_TMP=""
+cleanup_build_tmp() {
+    if [ -n "${BUILD_TMP:-}" ] && [ -d "$BUILD_TMP" ]; then
+        rm -rf "$BUILD_TMP"
+    fi
+}
+trap cleanup_build_tmp EXIT INT TERM
+
 is_arch_like() {
     [ -f /etc/arch-release ] && return 0
     [ -f /etc/cachyos-release ] && return 0
@@ -82,17 +90,17 @@ run_native_install() {
         echo "==> Building and installing native package from local repository..."
         cd "$SELF_DIR"
         mkdir -p src
-        ln -sfn "$SELF_DIR" src/scripts
+        ln -sfn "$SELF_DIR" src/scripts-git
         makepkg -ef -si
         exit 0
     else
         echo "==> Fetching repository and building native package..."
-        local build_tmp
-        build_tmp="$(mktemp -d -t scripts-build.XXXXXX)"
-        trap 'rm -rf "$build_tmp"' EXIT INT TERM
-        git clone https://github.com/DanyaNADAMU/Scripts.git "$build_tmp"
-        cd "$build_tmp"
-        makepkg -si
+        BUILD_TMP="$(mktemp -d -t scripts-build.XXXXXX)"
+        git clone https://github.com/DanyaNADAMU/Scripts.git "$BUILD_TMP"
+        cd "$BUILD_TMP"
+        mkdir -p src
+        ln -sfn "$BUILD_TMP" src/scripts-git
+        makepkg -ef -si
         exit 0
     fi
 }

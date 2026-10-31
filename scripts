@@ -2082,20 +2082,30 @@ sync_nautilus_scripts() {
         local dest_link="$target_nautilus_dir/$menu_title"
         local src_bin="$BIN_DIR/$bin_cmd"
 
+        local candidate_bin=""
         if [ -x "$src_bin" ]; then
-            $cmd_prefix ln -sf "$src_bin" "$dest_link"
+            candidate_bin="$src_bin"
+        elif [ -x "/usr/bin/$bin_cmd" ]; then
+            candidate_bin="/usr/bin/$bin_cmd"
+        elif [ -x "/usr/local/bin/$bin_cmd" ]; then
+            candidate_bin="/usr/local/bin/$bin_cmd"
         elif [ -n "${SOURCE_DIR:-}" ] && [ "$IS_LOCAL_REPO" = true ]; then
-            # If not yet installed in BIN_DIR during a standalone call, link directly to repo source
             case "$bin_cmd" in
-                bisync-synced)  [ -f "$SOURCE_DIR/desktop/bisync_synced.sh" ] && $cmd_prefix ln -sf "$SOURCE_DIR/desktop/bisync_synced.sh" "$dest_link" ;;
-                gdrive-upload)  [ -f "$SOURCE_DIR/desktop/gdrive_upload.sh" ] && $cmd_prefix ln -sf "$SOURCE_DIR/desktop/gdrive_upload.sh" "$dest_link" ;;
-                bluetooth-send) [ -f "$SOURCE_DIR/desktop/bluetooth_send.sh" ] && $cmd_prefix ln -sf "$SOURCE_DIR/desktop/bluetooth_send.sh" "$dest_link" ;;
+                bisync-synced)  [ -f "$SOURCE_DIR/desktop/bisync_synced.sh" ] && candidate_bin="$SOURCE_DIR/desktop/bisync_synced.sh" ;;
+                gdrive-upload)  [ -f "$SOURCE_DIR/desktop/gdrive_upload.sh" ] && candidate_bin="$SOURCE_DIR/desktop/gdrive_upload.sh" ;;
+                bluetooth-send) [ -f "$SOURCE_DIR/desktop/bluetooth_send.sh" ] && candidate_bin="$SOURCE_DIR/desktop/bluetooth_send.sh" ;;
             esac
+        fi
+
+        if [ -n "$candidate_bin" ]; then
+            $cmd_prefix rm -f "$dest_link"
+            $cmd_prefix ln -sf "$candidate_bin" "$dest_link"
         fi
     done
 
     # Remove obsolete or legacy script names if they linger
     $cmd_prefix rm -f "$target_nautilus_dir/Send to Danya phone via Bluetooth" 2>/dev/null || true
+    $cmd_prefix rm -f "$target_nautilus_dir/bisync-all-synced" 2>/dev/null || true
 
     # Fix ownership if running under sudo for user profile
     if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
@@ -2471,7 +2481,7 @@ cmd_pkgbuild() {
 
     if [ "$local_mode" = true ]; then
         mkdir -p src
-        ln -sfn "$SOURCE_DIR" src/scripts
+        ln -sfn "$SOURCE_DIR" src/scripts-git
         makepkg_args+=("-e")
     fi
 
