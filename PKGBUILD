@@ -47,6 +47,11 @@ package() {
     install -dm755 "$pkgdir/usr/bin"
     while IFS=: read -r src cmd cat desc; do
         [[ -z "$src" || "$src" =~ ^[[:space:]]*# ]] && continue
+        if [ "$cmd" = "sshfs" ]; then
+            # Avoid conflict with official /usr/bin/sshfs provided by package 'sshfs'
+            install -Dm755 "$src" "$pkgdir/usr/bin/sshfs-shim"
+            continue
+        fi
         if [ -f "$src" ]; then
             install -Dm755 "$src" "$pkgdir/usr/bin/$cmd"
         fi

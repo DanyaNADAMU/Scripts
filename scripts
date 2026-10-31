@@ -1004,6 +1004,8 @@ cmd_list() {
             else
                 status="Installed"
             fi
+        elif [ "$cmd_name" = "sshfs" ] && ([ -f "$BIN_DIR/sshfs-shim" ] || [ -f "/usr/bin/sshfs-shim" ]); then
+            status="Installed"
         fi
 
         printf "  \033[1m%-22s\033[0m %-10s %-12s %s\n" "$cmd_name" "$category" "$status" "$desc"
