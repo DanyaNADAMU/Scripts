@@ -1,0 +1,9 @@
+# Bash completion for bisync-synced
+_bisync_synced_completions() {
+    local cur
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-h --help --resync --dry-run --status" -- "$cur") )
+    fi
+}
+complete -F _bisync_synced_completions bisync-synced

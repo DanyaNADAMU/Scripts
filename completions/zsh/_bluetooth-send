@@ -1,0 +1,10 @@
+#compdef bluetooth-send
+
+_bluetooth_send() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Display help message]' \
+        '--setup[Configure target phone MAC address]:mac_address:' \
+        '*:file:_files'
+}
+
+_bluetooth_send "$@"

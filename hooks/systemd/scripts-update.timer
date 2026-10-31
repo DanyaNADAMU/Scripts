@@ -1,6 +1,6 @@
 [Unit]
 Description=Daily update timer for nada.mu personal utilities
-Documentation=https://github.com/DanyaNADAMU/scripts
+Documentation=https://github.com/DanyaNADAMU/Scripts
 
 [Timer]
 OnCalendar=daily

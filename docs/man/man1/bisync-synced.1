@@ -1,0 +1,51 @@
+.TH BISYNC-SYNCED 1 "October 2026" "scripts" "User Commands"
+.SH NAME
+bisync-synced \- bidirectional Google Drive synchronization with Btrfs snapshot protection
+.SH SYNOPSIS
+.B bisync-synced
+[\fB\-h\fR|\fB\-\-help\fR]
+[\fB\-\-resync\fR]
+[\fB\-\-dry-run\fR]
+[\fB\-\-status\fR]
+.SH DESCRIPTION
+\fBbisync-synced\fR executes a resilient bidirectional synchronization between a local directory
+(default: \fB$HOME/Remote/Synced\fR) and a remote Google Drive destination (default: \fBgdrive_dev:Synced\fR)
+using \fBrclone bisync\fR.
+.PP
+Before initiating data synchronization, if the target directory resides on a \fBBtrfs\fR subvolume, the script
+automatically captures a timestamped, read-only Btrfs snapshot in \fB$HOME/.local/share/gdrive_snapshots\fR.
+This provides instantaneous rollback protection against remote deletions or split-brain sync conflicts.
+Snapshots are automatically pruned, retaining the 5 most recent snapshots.
+.PP
+Concurrent runs are prevented via non-blocking file locking (\fBflock\fR). Live progress and status are reported
+via desktop notifications.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Display command synopsis and configurable environment variables.
+.TP
+.B \-\-resync
+Forces a full resynchronization baseline pass (passed directly to \fBrclone bisync\fR).
+.TP
+.B \-\-dry-run
+Executes a simulation run without creating snapshots or modifying remote/local files.
+.TP
+.B \-\-status
+Displays lock state and the last 20 lines of the synchronization log.
+.SH ENVIRONMENT
+.TP
+.B SYNC_SUBVOL
+Local synchronization path (default: \fB$HOME/Remote/Synced\fR).
+.TP
+.B SYNC_REMOTE
+Rclone remote target (default: \fBgdrive_dev:Synced\fR).
+.TP
+.B SYNC_SNAP_DIR
+Directory for local Btrfs snapshots (default: \fB$HOME/.local/share/gdrive_snapshots\fR).
+.TP
+.B SYNC_FILTER_FILE
+Rclone filter definitions file (default: \fB$HOME/.config/rclone/bisync-synced.filter\fR).
+.SH SEE ALSO
+.BR rclone (1),
+.BR btrfs (8),
+.BR scripts (1)

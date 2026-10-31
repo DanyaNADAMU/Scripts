@@ -5,9 +5,12 @@ _scripts() {
     commands=(
         'update:Sync and update installed utilities from repository'
         'list:List all declared and installed scripts'
+        'doctor:Diagnose dependencies, optional tools, and environment health'
+        'pkgbuild:Build native Arch/CachyOS package (.pkg.tar.zst) via makepkg'
         'prune:Find and remove deprecated or orphaned utilities'
         'clean:Alias for prune'
         'autoupdate:Manage automated updates via package manager hooks'
+        'nautilus:Manage GNOME Nautilus context menu scripts'
         'uninstall:Remove installed scripts, man pages, and completions'
         'help:Show help information'
     )
@@ -53,6 +56,27 @@ _scripts() {
                 list)
                     _arguments \
                         '--scope[Target directory scope]:scope:(user system)' \
+                        '(-h --help)'{-h,--help}'[Display help message]'
+                    ;;
+                doctor)
+                    _arguments \
+                        '--fix[Attempt automatic installation of missing dependencies]' \
+                        '--scope[Target directory scope]:scope:(user system)' \
+                        '(-h --help)'{-h,--help}'[Display help message]'
+                    ;;
+                pkgbuild)
+                    _arguments \
+                        '(-i --install)'{-i,--install}'[Install package after building with pacman -U]' \
+                        '(-c --clean)'{-c,--clean}'[Clean build artifacts before and after build]' \
+                        '--local[Build from local repository working tree]' \
+                        '--remote[Build from remote git clone]' \
+                        '--printsrcinfo[Generate and display .SRCINFO for AUR]' \
+                        '(-h --help)'{-h,--help}'[Display help message]'
+                    ;;
+                nautilus)
+                    _arguments \
+                        '1:action:(install sync list status uninstall remove help)' \
+                        '--scope[Target scope]:scope:(user system)' \
                         '(-h --help)'{-h,--help}'[Display help message]'
                     ;;
             esac

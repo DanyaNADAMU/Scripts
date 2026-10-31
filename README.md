@@ -34,7 +34,13 @@ scripts/
 │
 ├── desktop/                 # Workstation & desktop environment scripts
 │   ├── backup_seadrive.sh   # Automated encrypted SeaDrive to Google Drive backup
-│   └── keylight.py          # High-performance keyboard RGB backlight profile switcher
+│   ├── bisync_synced.sh     # Resilient bidirectional Google Drive sync with Btrfs snapshots
+│   ├── gdrive_upload.sh     # Rapid direct file/folder upload to Google Drive
+│   ├── bluetooth_send.sh    # Dynamic Bluetooth transfer to paired phone
+│   ├── keylight.py          # High-performance keyboard RGB backlight profile switcher
+│   └── compat/              # Integration bridges & upstream compatibility shims
+│       ├── nautilus_kdeconnect.sh # URL & path translator for GNOME Nautilus
+│       └── sshfs_shim.sh    # PATH shim stripping deprecated DSA from sshfs
 │
 └── media/                   # Cryptographic media & attestation tools
     └── media.py             # C2PA manifest signing, invisible watermarking & asset pipeline
@@ -48,7 +54,7 @@ scripts/
 Ideal for fresh servers or remote workstations. Installs all utilities automatically without interactive prompts:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/scripts/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/Scripts/main/install.sh | bash
 ```
 
 **Zero-Prompt Defaults:**
@@ -59,10 +65,10 @@ curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/scripts/main/install.sh
 #### Customizing Installation:
 ```bash
 # Install server utilities only to ~/.local/bin
-curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/scripts/main/install.sh | bash -s -- --category server
+curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/Scripts/main/install.sh | bash -s -- --category server
 
 # Force system-wide installation
-curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/scripts/main/install.sh | sudo bash -s -- --scope system
+curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/Scripts/main/install.sh | sudo bash -s -- --scope system
 ```
 
 ---
@@ -72,7 +78,7 @@ For developing and contributing to scripts:
 
 ```bash
 # 1. Clone into standard projects directory
-git clone https://github.com/DanyaNADAMU/scripts.git ~/projects/scripts
+git clone https://github.com/DanyaNADAMU/Scripts.git ~/projects/scripts
 cd ~/projects/scripts
 
 # 2. Link utilities into ~/.local/bin (symlinks allow live edits)
@@ -86,16 +92,56 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ---
 
-### Option 3: Arch Linux & CachyOS Native Package (`makepkg -si`)
-For Arch Linux, CachyOS, and other ALPM-based systems, install natively via `makepkg` so files and dependencies (`uv`, `bash`, `systemd`) are tracked by `pacman`:
+### Option 3: Arch Linux & CachyOS First-Class Integration
 
+For Arch Linux, CachyOS, and other ALPM-based systems, `scripts` provides native first-class integration:
+
+#### A. AUR Helper (Paru / Yay)
 ```bash
-git clone https://github.com/DanyaNADAMU/scripts.git ~/projects/scripts
+paru -S scripts-git
+# or
+yay -S scripts-git
+```
+
+#### B. Intelligent Bootstrap Installer (`install.sh`)
+When executed on Arch Linux or CachyOS, `install.sh` automatically detects the environment:
+```bash
+# Interactive mode: prompts to choose native makepkg or user-space symlinks
+./install.sh
+
+# Direct native build & install
+./install.sh --native
+
+# Remote one-liner building native pacman package directly
+curl -fsSL https://raw.githubusercontent.com/DanyaNADAMU/Scripts/main/install.sh | bash -s -- --native
+```
+
+#### C. Local Package Building (`scripts pkgbuild` / `makepkg`)
+To build and install the native `.pkg.tar.zst` directly from your local working tree without re-cloning from GitHub:
+```bash
 cd ~/projects/scripts
+scripts pkgbuild -i
+# or standard makepkg
 makepkg -si
 ```
 
-This builds and installs `scripts-git`, placing binaries in `/usr/bin`, registering man pages and shell completions (Bash, Zsh, Fish), and configuring the ALPM post-transaction update hook.
+This builds and installs `scripts-git`, placing binaries in `/usr/bin`, registering man pages and shell completions (Bash, Zsh, Fish), and configuring the ALPM post-transaction update hook (`/usr/share/libalpm/hooks/99scripts.hook`).
+
+---
+
+## System Diagnostics: `scripts doctor`
+
+Run the built-in diagnostic tool to inspect environment health, core runtime requirements (`bash`, `git`, `systemd`, `uv`), and optional tool dependencies:
+
+```bash
+scripts doctor
+```
+
+On Arch Linux and CachyOS, `scripts doctor` identifies missing optional tools and outputs the exact `pacman` command to install them. Use `--fix` to run remediation automatically:
+
+```bash
+scripts doctor --fix
+```
 
 ---
 
@@ -106,6 +152,8 @@ Once installed, the `scripts` manager is available anywhere in your terminal:
 ```bash
 scripts update               # Pull upstream updates and sync all utilities (default: all)
 scripts list                 # View all declared utilities and installation status
+scripts doctor               # Run comprehensive system and dependency diagnostics
+scripts pkgbuild             # Build native Arch/CachyOS package from local tree
 scripts autoupdate status    # Check status of automated update mechanisms across the system
 scripts autoupdate enable    # Enable auto-update (systemd, shell, cron, apt, pacman, git, all)
 scripts uninstall            # Cleanly remove all utilities, man pages, and completions
@@ -161,4 +209,9 @@ Rich argument and flag completions (`setup-user --<Tab>`, `scripts <Tab>`) are i
 | `languagetool-portal` | `server/languagetool_portal.py` | **Server** | Self-service token portal for LanguageTool with Authentik forward auth. | Python $\ge$ 3.10 (standard library only) |
 | `media` | `media/media.py` | **Media** | Unified media lifecycle: C2PA attestation, DWT steganography, Bitcoin timestamps & asset packaging. | Python $\ge$ 3.11, `uv` |
 | `scan-reality` | `server/scan_reality.py` | **Server** | High-performance async TLS 1.3 & HTTP/2 camouflage scanner for XTLS Reality. | Python $\ge$ 3.11, `uv` |
+| `nautilus-kdeconnect` | `desktop/compat/nautilus_kdeconnect.sh` | **Desktop** | Compatibility bridge translating `kdeconnect://` URLs and `kioexec` cache paths for Nautilus. | Bash, `nautilus` |
+| `sshfs` | `desktop/compat/sshfs_shim.sh` | **Desktop** | Compatibility shim stripping deprecated DSA (`ssh-dss`) and enforcing keepalive timeouts for `sshfs`. | Bash, `sshfs` |
+| `bisync-synced` | `desktop/bisync_synced.sh` | **Desktop** | Bidirectional Google Drive sync with Btrfs snapshot protection and notifications. | Bash, `rclone`, `btrfs-progs` |
+| `gdrive-upload` | `desktop/gdrive_upload.sh` | **Desktop** | Quick upload of files and folders directly to Google Drive via Rclone. | Bash, `rclone` |
+| `bluetooth-send` | `desktop/bluetooth_send.sh` | **Desktop** | Wireless file transfer to paired mobile phone via Bluetooth. | Bash, `blueman-sendto` |
 

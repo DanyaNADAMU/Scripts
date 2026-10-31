@@ -1,0 +1,11 @@
+#compdef bisync-synced
+
+_bisync_synced() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Display help message]' \
+        '--resync[Perform initial resynchronization baseline pass]' \
+        '--dry-run[Perform trial run without transferring or writing data]' \
+        '--status[Display lock state and recent log entries]'
+}
+
+_bisync_synced "$@"

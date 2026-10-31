@@ -4,9 +4,12 @@
 # Subcommands
 complete -c scripts -f -n "__fish_use_subcommand" -a "update" -d "Pull updates and sync utilities"
 complete -c scripts -f -n "__fish_use_subcommand" -a "list" -d "List declared utilities and installation status"
+complete -c scripts -f -n "__fish_use_subcommand" -a "doctor" -d "Diagnose dependencies, optional tools, and environment health"
+complete -c scripts -f -n "__fish_use_subcommand" -a "pkgbuild" -d "Build native Arch/CachyOS package (.pkg.tar.zst) via makepkg"
 complete -c scripts -f -n "__fish_use_subcommand" -a "prune" -d "Clean up removed or orphaned utilities"
 complete -c scripts -f -n "__fish_use_subcommand" -a "clean" -d "Clean up temporary cache and files"
 complete -c scripts -f -n "__fish_use_subcommand" -a "autoupdate" -d "Manage automated background updates"
+complete -c scripts -f -n "__fish_use_subcommand" -a "nautilus" -d "Manage GNOME Nautilus context menu scripts"
 complete -c scripts -f -n "__fish_use_subcommand" -a "uninstall" -d "Remove utilities, completions, and man pages"
 complete -c scripts -f -n "__fish_use_subcommand" -a "help" -d "Display help information"
 

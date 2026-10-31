@@ -1,6 +1,6 @@
 [Unit]
 Description=Automated update for nada.mu personal utilities
-Documentation=https://github.com/DanyaNADAMU/scripts
+Documentation=https://github.com/DanyaNADAMU/Scripts
 After=network-online.target
 Wants=network-online.target
 

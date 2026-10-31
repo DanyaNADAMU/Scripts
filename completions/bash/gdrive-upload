@@ -1,0 +1,11 @@
+# Bash completion for gdrive-upload
+_gdrive_upload_completions() {
+    local cur
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-h --help" -- "$cur") )
+    else
+        _filedir
+    fi
+}
+complete -F _gdrive_upload_completions gdrive-upload

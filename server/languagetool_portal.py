@@ -558,6 +558,12 @@ def render_portal_html(username: str, token: str, server_url: str) -> str:
     safe_token = html.escape(token)
     safe_url = html.escape(server_url)
 
+    # Derive browser extension direct routing endpoint: https://<domain>/u/<user>/<token>/v2
+    parsed = urllib.parse.urlparse(server_url)
+    base_origin = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else server_url.rstrip("/v2").rstrip("/")
+    ext_url = f"{base_origin}/u/{safe_user}/{safe_token}/v2"
+    safe_ext_url = html.escape(ext_url)
+
     return f"""<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -861,6 +867,14 @@ def render_portal_html(username: str, token: str, server_url: str) -> str:
             </div>
         </div>
 
+        <div class="field-group">
+            <label for="ext-url">Browser Extension URL (Chrome / Firefox / Edge)</label>
+            <div class="input-row">
+                <input type="text" id="ext-url" value="{safe_ext_url}" readonly spellcheck="false">
+                <button type="button" class="btn btn-copy" onclick="copyField('ext-url', this)">Copy</button>
+            </div>
+        </div>
+
         <form method="POST" action="/">
             <button type="submit" class="btn btn-regen" onclick="return confirmRegenerate()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -890,6 +904,23 @@ def render_portal_html(username: str, token: str, server_url: str) -> str:
                         </ul>
                     </li>
                     <li>Нажмите кнопку <strong>Test Connection</strong> для проверки связи. Готово!</li>
+                </ol>
+            </div>
+        </details>
+
+        <details class="guide-accordion" style="margin-top: 12px;">
+            <summary>
+                <span>Инструкция для расширения браузера (Chrome / Firefox / Edge)</span>
+                <span style="font-size: 11px; opacity: 0.8;">▼</span>
+            </summary>
+            <div class="guide-content">
+                <ol>
+                    <li>Установите официальное расширение <strong>LanguageTool</strong> в браузере.</li>
+                    <li>Откройте настройки расширения (клик по иконке расширения → <em>Шестерёнка</em>).</li>
+                    <li>Перейдите в раздел <strong>Дополнительные настройки</strong> (<em>Advanced Settings</em>).</li>
+                    <li>В блоке <strong>Сервер</strong> выберите вариант <strong>Другой сервер</strong> (<em>Other server</em>).</li>
+                    <li>В поле URL сервера вставьте скопированный выше <strong>Browser Extension URL</strong>.</li>
+                    <li>Проверка орфографии, грамматики и личный словарь в браузере активированы!</li>
                 </ol>
             </div>
         </details>
@@ -1130,7 +1161,7 @@ def generate_systemd_unit(
 
     return f"""[Unit]
 Description=LanguageTool Self-Service Token Portal
-Documentation=man:languagetool-portal(1) https://github.com/DanyaNADAMU/scripts
+Documentation=man:languagetool-portal(1) https://github.com/DanyaNADAMU/Scripts
 After=network.target
 
 [Service]

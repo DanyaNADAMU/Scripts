@@ -1,0 +1,32 @@
+.TH BLUETOOTH-SEND 1 "October 2026" "scripts" "User Commands"
+.SH NAME
+bluetooth-send \- send files to a paired mobile phone via Bluetooth using blueman-sendto
+.SH SYNOPSIS
+.B bluetooth-send
+[\fB\-h\fR|\fB\-\-help\fR]
+[\fB\-\-setup\fR [\fIMAC\fR]]
+[\fIFILE\fR...]
+.SH DESCRIPTION
+\fBbluetooth-send\fR transmits selected files to a paired mobile phone over Bluetooth using \fBblueman-sendto\fR.
+.PP
+The destination device MAC address is resolved dynamically and securely without hardcoding personal hardware identifiers
+into repositories:
+.IP 1. 4
+\fBBLUETOOTH_PHONE_MAC\fR environment variable.
+.IP 2. 4
+\fB$HOME/.config/scripts/bluetooth_phone.mac\fR.
+.IP 3. 4
+\fB$HOME/.config/scripts/bluetooth_phone.conf\fR.
+.IP 4. 4
+Automatic discovery of a single paired phone device via \fBbluetoothctl\fR.
+.SH OPTIONS
+.TP
+.BR \-\-setup " [" \fIMAC\fR "]"
+Interactively configure or persist the specified Bluetooth MAC address into \fB$HOME/.config/scripts/bluetooth_phone.mac\fR.
+.TP
+.BR \-h ", " \-\-help
+Displays brief command-line help and exit.
+.SH SEE ALSO
+.BR blueman-sendto (1),
+.BR bluetoothctl (1),
+.BR scripts (1)

@@ -1,0 +1,11 @@
+# Bash completion for bluetooth-send
+_bluetooth_send_completions() {
+    local cur
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "-h --help --setup" -- "$cur") )
+    else
+        _filedir
+    fi
+}
+complete -F _bluetooth_send_completions bluetooth-send

@@ -1,0 +1,48 @@
+.TH NAUTILUS-KDECONNECT 1 "October 2026" "scripts" "User Commands"
+.SH NAME
+nautilus-kdeconnect \- compatibility bridge translating kdeconnect:// URLs and recovering zombie FUSE mounts for GNOME Nautilus
+.SH SYNOPSIS
+.B nautilus-kdeconnect
+[\fB\-h\fR|\fB\-\-help\fR]
+[\fB\-r\fR|\fB\-\-reset\fR [\fIDEVICE_ID\fR]]
+[\fIURI\fR|\fIPATH\fR...]
+.SH DESCRIPTION
+\fBnautilus-kdeconnect\fR is a desktop compatibility bridge and protocol handler designed to allow GNOME \fBNautilus\fR to seamlessly browse file systems exposed by \fBKDE Connect\fR.
+.PP
+By default, KDE Connect dispatches file manager requests using KDE-native KIO URLs (such as \fBkdeconnect://<device-id>\fR) or temporary KIOExec wrapper cache directories (\fB~/.cache/kioexec/krun/...\fR). GNOME Nautilus does not implement the KIO subsystem, causing browsing actions to fail or open invalid temporary directories.
+.PP
+Furthermore, when Android devices enter deep sleep (Doze mode) or roam between Wi-Fi networks, FUSE mounts frequently degrade into "zombie" states (\fBd---------\fR, \fBInput/output error (os error 5)\fR), causing Nautilus to hang indefinitely. \fBnautilus-kdeconnect\fR automatically detects hanging or dead mounts, executes non-blocking lazy unmounting (\fBfusermount3 -u -z\fR), clears orphan \fBsshfs\fR processes, and re-triggers mounting via \fBkdeconnect-cli\fR before forwarding sanitized paths to the native \fBnautilus\fR binary.
+.SH OPTIONS
+.TP
+.BR \-r ", " \-\-reset " [" \fIDEVICE_ID\fR "]"
+Performs emergency recovery and remounting of hanging or zombie FUSE mounts. If \fIDEVICE_ID\fR is specified, resets that device's mount. If omitted, scans all active mounts under \fB/run/user/$UID\fR.
+.TP
+.BR \-h ", " \-\-help
+Displays brief command-line synopsis and exits.
+.SH EXAMPLES
+.PP
+Open device storage directly by device ID:
+.RS
+.nf
+nautilus-kdeconnect kdeconnect://123456789abcdef
+.fi
+.RE
+.PP
+Perform an emergency reset of all hanging KDE Connect mounts:
+.RS
+.nf
+nautilus-kdeconnect --reset
+.fi
+.RE
+.PP
+Reset and remount a specific phone device:
+.RS
+.nf
+nautilus-kdeconnect --reset 0ea371db39424699b44e8f13a548be3b
+.fi
+.RE
+.SH SEE ALSO
+.BR nautilus (1),
+.BR sshfs (1),
+.BR kdeconnect-cli (1),
+.BR scripts (1)

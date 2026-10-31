@@ -15,6 +15,15 @@ Synchronizes and updates all utilities with the repository. Verifies SHA-256 dig
 .B list
 Lists all utilities declared in the manifest, showing their installation status and paths.
 .TP
+.B doctor \fR[\fB\-\-fix\fR]
+Performs a comprehensive diagnostic health check of the system environment, core runtime dependencies (\fBbash\fR, \fBgit\fR, \fBsystemd\fR, \fBuv\fR), optional feature packages (\fBrclone\fR, \fBopenrgb\fR, \fBlibnotify\fR, \fBbtrfs-progs\fR, \fBblueman\fR), PATH variables, and shell completions. On Arch Linux and CachyOS, provides exact \fBpacman\fR package remediation commands. Passing \fB\-\-fix\fR automatically attempts installation of missing dependencies.
+.TP
+.B pkgbuild \fR[\fB\-i\fR|\fB\-\-install\fR] [\fB\-c\fR|\fB\-\-clean\fR] [\fB\-\-local\fR|\fB\-\-remote\fR] [\fB\-\-printsrcinfo\fR]
+Builds a native Arch Linux / CachyOS package (\fB.pkg.tar.zst\fR) via \fBmakepkg\fR. By default, packages the local repository state directly without needing to clone from git remote. Use \fB\-\-install\fR to automatically install the built package with \fBpacman \-U\fR. Use \fB\-\-printsrcinfo\fR to generate \fB.SRCINFO\fR for AUR submissions.
+.TP
+.B nautilus \fR[\fIinstall\fR|\fIsync\fR|\fIlist\fR|\fIuninstall\fR]
+Manages GNOME Files (Nautilus) context menu integration scripts for rapid file uploads, bidirectional syncing, and Bluetooth transfers.
+.TP
 .B autoupdate \fR[\fIstatus\fR|\fIenable\fR|\fIdisable\fR] [\fItarget\fR]
 Manage automated updates across multiple mechanisms: systemd timers (user and system scope), interactive shell startup hooks (~/.bashrc, ~/.zshrc, ~/.config/fish/config.fish), cron jobs (crontab, /etc/cron.daily), APT hooks (/etc/apt/apt.conf.d/99scripts), Pacman hooks (/etc/pacman.d/hooks/99scripts.hook), and git post-merge hooks. Supported targets: \fBsystemd\fR, \fBshell\fR, \fBcron\fR, \fBapt\fR, \fBpacman\fR, \fBgit\fR, \fBall\fR.
 .TP

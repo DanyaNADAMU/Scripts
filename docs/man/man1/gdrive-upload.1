@@ -1,0 +1,34 @@
+.TH GDRIVE-UPLOAD 1 "October 2026" "scripts" "User Commands"
+.SH NAME
+gdrive-upload \- quick direct upload of files and folders to Google Drive via Rclone
+.SH SYNOPSIS
+.B gdrive-upload
+[\fB\-h\fR|\fB\-\-help\fR]
+[\fIFILE\fR|\fIDIR\fR...]
+.SH DESCRIPTION
+\fBgdrive-upload\fR uploads specified files or directories directly to the configured Google Drive destination
+(default: \fBgdrive_dev:Synced\fR) using \fBrclone copy\fR or \fBrclone copyto\fR without requiring a full bidirectional sync.
+.PP
+If the target files or directories are located within the synchronization root (\fB$HOME/Remote/Synced\fR),
+the script strips the root prefix and preserves the relative directory hierarchy on the remote storage.
+.PP
+This utility functions as both a standalone command-line tool and an integration backend for GNOME Nautilus
+context menu actions (\fBCopy Selected to Google Drive\fR).
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Displays brief command-line help and exit.
+.SH ENVIRONMENT
+.TP
+.B SYNC_SUBVOL
+Local root synchronization directory (default: \fB$HOME/Remote/Synced\fR).
+.TP
+.B SYNC_REMOTE
+Rclone remote destination (default: \fBgdrive_dev:Synced\fR).
+.TP
+.B SYNC_QUICK_LOG
+Log file destination (default: \fB/tmp/rclone_quick_upload.log\fR).
+.SH SEE ALSO
+.BR rclone (1),
+.BR bisync-synced (1),
+.BR scripts (1)

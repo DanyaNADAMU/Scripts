@@ -2,29 +2,33 @@
 # Contributor: DanyaNADAMU <git@nada.mu>
 
 pkgname=scripts-git
-pkgver=1.1.0.r13.gaeab73d
+pkgver=1.1.0.r67.gd536fe9
 pkgrel=1
 pkgdesc="Unified manager and personal utilities ecosystem for nada.mu"
 arch=('any')
-url="https://github.com/DanyaNADAMU/scripts"
+url="https://github.com/DanyaNADAMU/Scripts"
 license=('MIT')
 depends=('bash' 'systemd' 'uv')
 optdepends=(
-    'rclone: for automated cloud backup utilities (backup-seadrive, backup-seafile)'
+    'rclone: for automated cloud backup utilities (backup-seadrive, backup-seafile, bisync-synced, gdrive-upload)'
     'openrgb: for keyboard RGB backlight profile switching (keylight)'
-    'libnotify: for desktop notifications'
+    'libnotify: for desktop notifications (bisync-synced)'
+    'btrfs-progs: for snapshot protection during bidirectional sync (bisync-synced)'
+    'blueman: for Bluetooth file transfer integration (bluetooth-send)'
+    'nautilus: for GNOME Files context menu integration'
+    'sshfs: for sshfs compatibility shim'
 )
 makedepends=('git')
 provides=('scripts')
 conflicts=('scripts')
-source=("scripts::git+https://github.com/DanyaNADAMU/scripts.git")
+source=("scripts::git+https://github.com/DanyaNADAMU/Scripts.git")
 sha256sums=('SKIP')
 
 pkgver() {
     local target_dir="$srcdir/scripts"
     [ ! -d "$target_dir" ] && target_dir="${startdir:-.}"
     cd "$target_dir"
-    git describe --long --tags 2>/dev/null || printf "1.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+    git describe --long --tags --match 'v*' 2>/dev/null | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g' || printf "1.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 }
 
 package() {

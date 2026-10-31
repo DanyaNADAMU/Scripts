@@ -1,0 +1,61 @@
+name: Arch Linux & CachyOS Package Validation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'PKGBUILD'
+      - '.SRCINFO'
+      - 'manifest.txt'
+      - 'scripts'
+      - 'hooks/**'
+      - 'completions/**'
+      - 'docs/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'PKGBUILD'
+      - '.SRCINFO'
+      - 'manifest.txt'
+      - 'scripts'
+      - 'hooks/**'
+      - 'completions/**'
+      - 'docs/**'
+
+jobs:
+  validate-arch-package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+
+    steps:
+      - name: Install Git & Namcap
+        run: |
+          pacman -Syu --noconfirm git namcap sudo
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure non-root build user
+        run: |
+          useradd -m builduser
+          passwd -d builduser
+          echo 'builduser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+          chown -R builduser:builduser "$GITHUB_WORKSPACE"
+
+      - name: Validate .SRCINFO consistency
+        run: |
+          su builduser -c "makepkg --printsrcinfo > .SRCINFO.generated"
+          if ! diff -u .SRCINFO .SRCINFO.generated; then
+            echo "Error: .SRCINFO is out of sync with PKGBUILD! Run 'scripts pkgbuild --printsrcinfo'." >&2
+            exit 1
+          fi
+
+      - name: Run Namcap linter on PKGBUILD
+        run: |
+          su builduser -c "namcap PKGBUILD || true"
+
+      - name: Build native package (.pkg.tar.zst)
+        run: |
+          su builduser -c "makepkg -s --noconfirm"

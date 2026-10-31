@@ -1,0 +1,9 @@
+#compdef gdrive-upload
+
+_gdrive_upload() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Display help message]' \
+        '*:file:_files'
+}
+
+_gdrive_upload "$@"

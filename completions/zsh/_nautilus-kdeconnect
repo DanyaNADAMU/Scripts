@@ -1,0 +1,10 @@
+#compdef nautilus-kdeconnect
+
+_nautilus_kdeconnect() {
+    _arguments \
+        '(-h --help)'{-h,--help}'[Display help message]' \
+        '(-r --reset)'{-r,--reset}'[Emergency reset/remount of hanging or zombie FUSE mounts]:device_id:' \
+        '*:file:_files'
+}
+
+_nautilus_kdeconnect "$@"

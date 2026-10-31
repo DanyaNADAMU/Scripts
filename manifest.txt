@@ -9,4 +9,9 @@ desktop/backup_seadrive.sh:backup-seadrive:desktop:Encrypted incremental backup 
 desktop/keylight.py:keylight:desktop:High-performance keyboard RGB backlight profile switcher using OpenRGB SDK
 server/languagetool_portal.py:languagetool-portal:server:Self-service token portal for LanguageTool with Authentik forward auth
 server/scan_reality.py:scan-reality:server:Scan and rank TLS 1.3 & HTTP/2 camouflage domains for XTLS Reality
+desktop/compat/nautilus_kdeconnect.sh:nautilus-kdeconnect:desktop:Translate kdeconnect:// URLs and kioexec paths for GNOME Nautilus
+desktop/compat/sshfs_shim.sh:sshfs:desktop:Compatibility shim stripping deprecated DSA (ssh-dss) and enforcing keepalive timeouts
+desktop/bisync_synced.sh:bisync-synced:desktop:Bidirectional Google Drive sync with Btrfs snapshot protection
+desktop/gdrive_upload.sh:gdrive-upload:desktop:Quick upload of files and folders directly to Google Drive via Rclone
+desktop/bluetooth_send.sh:bluetooth-send:desktop:Send files to paired phone via Bluetooth (blueman-sendto)
 

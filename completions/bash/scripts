@@ -3,7 +3,7 @@ _scripts_completions() {
     local cur prev commands
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="update list prune clean autoupdate uninstall help"
+    commands="update list doctor pkgbuild prune clean autoupdate nautilus uninstall help"
 
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
@@ -11,6 +11,18 @@ _scripts_completions() {
     fi
 
     case "$prev" in
+        doctor)
+            COMPREPLY=( $(compgen -W "--fix --scope --help" -- "$cur") )
+            return 0
+            ;;
+        pkgbuild)
+            COMPREPLY=( $(compgen -W "-i --install -c --clean --local --remote --printsrcinfo --help" -- "$cur") )
+            return 0
+            ;;
+        nautilus)
+            COMPREPLY=( $(compgen -W "install sync list status uninstall remove help" -- "$cur") )
+            return 0
+            ;;
         autoupdate)
             COMPREPLY=( $(compgen -W "status enable disable" -- "$cur") )
             return 0
