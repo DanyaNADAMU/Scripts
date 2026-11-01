@@ -99,6 +99,11 @@ if [ ! -d "$SUBVOL" ]; then
     exit 1
 fi
 
+# Ensure check-access token exists locally if check-access is enabled
+if [ ! -f "$SUBVOL/RCLONE_TEST" ]; then
+    touch "$SUBVOL/RCLONE_TEST" 2>/dev/null || true
+fi
+
 # Prevent concurrent runs via non-blocking file lock
 exec 200>"$LOCK_FILE"
 if ! flock -n 200; then
@@ -108,6 +113,11 @@ if ! flock -n 200; then
 fi
 
 send_notify "low" "Google Drive Sync" "Starting bidirectional sync..."
+
+if [ -t 1 ]; then
+    echo "==> Starting bidirectional sync ($SUBVOL <-> $REMOTE_TARGET)..."
+    echo "    Scanning files across Google Drive and local filesystem (takes ~30-60s)..."
+fi
 
 # Create read-only Btrfs snapshot if directory is on a Btrfs subvolume
 if command -v btrfs &>/dev/null && btrfs subvolume show "$SUBVOL" &>/dev/null; then
